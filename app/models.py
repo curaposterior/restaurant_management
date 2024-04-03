@@ -1,85 +1,92 @@
 from typing import Optional
 import sqlalchemy as sa
 import sqlalchemy.orm as so
+from datetime import datetime, timezone
 
 import datetime
 
 from app import db
 
+
 class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(20), unique=True)
-    password_hash = db.Column(db.String(128), unique=True)
-    role = db.Column(db.String(10))
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    email: so.Mapped[str] = so.mapped_column(sa.String(120), index=True,
+                                             unique=True)
+    password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
+
+    role: so.Mapped[str] = so.mapped_column(sa.String(20))
+
+    def __repr__(self):
+        return '<User {}:{}>'.format(self.email, self.role)
 
 
 class Customer(db.Model):
     __tablename__ = 'customer'
-    id = db.Column(db.Integer, primary_key=True)
-    visits_number = db.Column(db.Integer)
-    card_number = db.Column(db.String(19))
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    visits_number: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
+    card_number: so.Mapped[str] = so.mapped_column(sa.String(19), index=True)
 
-    orders = db.relationship('Order', backref='customer', lazy=True)
-
-
-class Order(db.Model):
-    __tablename__ = 'order'
-    id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.Datetime, default=datetime.datetime.utcnow)
-    price = db.Column(db.Float)
-
-    customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'), nullable=False)
-    order_information_id = db.Column(db.Integer, db.ForeignKey('orderinformation.id'), nullable=False)
-
-
-class OrderInformation(db.Model):
-    __tablename__ = 'orderinformation'
-    id = db.Column(db.Integer, primary_key=True)
-    dish_id = db.Column(db.Integer, db.ForeignKey('dish.id'), nullable=False)
-
-
-class Dish(db.Model):
-    __tablename__ = 'dish'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(20), unique=True)
-    price = db.Column(db.Integer)
-    dish_information_id = db.Column(db.Integer, db.ForeignKey('dishinformation.id'), nullable=False)
-
-    dish_information = db.relationship('DishInformation', backref='dish', nullable=False)
-
-
-class DishInformation(db.Model):
-    __tablename__ = 'dishinformation'
-    id = db.Column(db.Integer, primary_key=True)
-
-    dish_id = db.Column(db.Integer, db.ForeignKey('dish.id'), nullable=False)
-    ingredient_id = db.Column(db.Integer, db.ForeignKey('ingredient.id'), nullable=False)
+    orders: so.WriteOnlyMapped['Order'] = so.relationship(back_populates='customer')
 
 
 class Ingredient(db.Model):
     __tablename__ = 'ingredient'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(30), unique=True)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(20), unique=True)
+    quantity: so.Mapped[int] = so.mapped_column(sa.Integer)
+    price: so.Mapped[float] = so.mapped_column(sa.Float)
 
-    dishes = db.relationship('DishInformation', backref='ingredients', lazy=True)
+    dishes: so.WriteOnlyMapped['Dish'] = so.relationship(back_populates='dish')
+
+class DishInformation(db.Model):
+    __tablename__ = 'dish_information'
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+
+    dish_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('Dish.id'))
+    ingredient_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('Ingredient.id'))
+
+class Dish(db.Model):
+    __tablename__ = 'dish'
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(20), unique=True)
+    price: so.Mapped[float] = so.mapped_column(sa.Float)
+
+    dish_information_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(DishInformation.id))
+    dish_information: so.Mapped[DishInformation] = so.relationship()
+
+class OrderInformation(db.Model):
+    __tablename__ = "order_information"
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    dish_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Dish.id))
+
+
+class Order(db.Model):
+    __tablename__ = 'order'
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(30), unique=True)
+    created_at: so.Mapped[datetime.datetime] = so.mapped_column(
+        default=lambda: datetime.datetime.now())
+    price: so.Mapped[float] = so.mapped_column(sa.Float, default=0.0)
+    
+    customer_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Customer.id), index=True)
+    order_information_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(OrderInformation.id))
 
 
 class Supplier(db.Model):
     __tablename__ = 'supplier'
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(15))
-    address = db.Column(db.String(15))
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(15))
+    address: so.Mapped[str] = so.mapped_column(sa.String(15))
 
-    supply_orders = db.relationship('SupplyOrder', backref='supplier', lazy=True)
+    supply_orders: so.Mapped['SupplyOrder'] = so.relationship(backref='')
 
 
 class SupplyOrder(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    created_at = db.Column(db.Datetime)
-    quantity = db.Column(db.Integer)
-    price = db.Column(db.Float)
-
-    supplier_id = db.Column(db.Integer, db.ForeignKey('supplier.id'))
-    ingredient_id = db.Column(db.Integer, db.ForeignKey('supplier.id'))
+    __tablename__ = 'supply_order'
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    quantity: so.Mapped[int] = so.mapped_column(sa.Integer)
+    price: so.Mapped[int] = so.mapped_column(sa.Float)
+    created_at: so.Mapped[datetime.datetime] = so.mapped_column(default=lambda: datetime.datetime.now())
+    
+    supplier_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Supplier.id))
+    ingredient_id = so.Mapped[int] = so.mapped_column(sa.ForeignKey(Ingredient.id))

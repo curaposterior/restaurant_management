@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# env variables
+.env
+.flaskenv
+
 # Distribution / packaging
 .Python
 build/
