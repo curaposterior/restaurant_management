@@ -1,14 +1,16 @@
 {% extends "base.html" %}
 {% block content %}
-    <div class="container" style="padding-bottom: 0px;margin-bottom: 214px;">
+    <div class="container" style="padding-bottom: 0px; margin-bottom: 214px;">
+        {% include "forms.html" %}
         <div class="row">
             <div class="col-md-12 offset-lg-0">
-                <p>Current state of the restaurant</p>
+                <h4 style="text-align: center">Current state of the restaurant</h4>
+                <br><br>
             </div>
         </div>
         <div class="row">
             <div class="col-md-4 col-lg-4" style="padding-bottom: 0px;">
-                <p>Paragraph</p>
+                <p>Ingredients</p>
                 <ul class="list-group">
                     <li class="list-group-item"><span>List Group Item 1</span></li>
                     <li class="list-group-item"><span>List Group Item 2</span></li>
@@ -16,7 +18,7 @@
                 </ul>
             </div>
             <div class="col-md-4">
-                <p>Paragraph</p>
+                <p>Dishes</p>
                 <ul class="list-group">
                     <li class="list-group-item"><span>List Group Item 1</span></li>
                     <li class="list-group-item"><span>List Group Item 2</span></li>
@@ -24,7 +26,7 @@
                 </ul>
             </div>
             <div class="col-md-4">
-                <p>Paragraph</p>
+                <p>Orders</p>
                 <ul class="list-group">
                     <li class="list-group-item"><span>List Group Item 1</span></li>
                     <li class="list-group-item"><span>List Group Item 2</span></li>

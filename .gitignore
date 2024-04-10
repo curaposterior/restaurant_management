@@ -6,9 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
-# env variables
+# env variables and flask
 .env
 .flaskenv
+*.db
 
 # Distribution / packaging
 .Python

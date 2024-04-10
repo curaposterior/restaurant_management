@@ -6,3 +6,13 @@ class Config:
         'veryfsdlkfksldlf23123lssdgfsdvb442ddsfd'
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
         'sqlite:///' + os.path.join(basedir, 'app.db')
+    
+    MIN_THRESHOLD_INGRIEDIENTS = 100
+
+'''
+3 formularze na input
+
+2 na output - wyjmowanie danych, np wyciaganie
+
+srs, er diagram,
+'''

@@ -26,7 +26,7 @@ class Customer(db.Model):
     visits_number: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
     card_number: so.Mapped[str] = so.mapped_column(sa.String(19), index=True)
 
-    orders: so.WriteOnlyMapped['Order'] = so.relationship(back_populates='customer')
+    # orders: so.WriteOnlyMapped['Order'] = so.relationship(back_populates='customer')
 
 
 class Ingredient(db.Model):
@@ -36,14 +36,19 @@ class Ingredient(db.Model):
     quantity: so.Mapped[int] = so.mapped_column(sa.Integer)
     price: so.Mapped[float] = so.mapped_column(sa.Float)
 
-    dishes: so.WriteOnlyMapped['Dish'] = so.relationship(back_populates='dish')
+    # dishes: so.WriteOnlyMapped['Dish'] = so.relationship(back_populates='dish')
+
+    def __repr__(self) -> str:
+        return f"{self.id}. {self.name}"
+
 
 class DishInformation(db.Model):
     __tablename__ = 'dish_information'
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
 
-    dish_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('Dish.id'))
-    ingredient_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('Ingredient.id'))
+    dish_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('dish.id'))
+    ingredient_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('ingredient.id'))
+
 
 class Dish(db.Model):
     __tablename__ = 'dish'
@@ -51,13 +56,14 @@ class Dish(db.Model):
     name: so.Mapped[str] = so.mapped_column(sa.String(20), unique=True)
     price: so.Mapped[float] = so.mapped_column(sa.Float)
 
-    dish_information_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(DishInformation.id))
-    dish_information: so.Mapped[DishInformation] = so.relationship()
+    dish_information_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('dish_information.id'))
+    # dish_information: so.Mapped[DishInformation] = so.relationship()
+
 
 class OrderInformation(db.Model):
     __tablename__ = "order_information"
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    dish_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Dish.id))
+    dish_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('dish.id'))
 
 
 class Order(db.Model):
@@ -69,7 +75,7 @@ class Order(db.Model):
     price: so.Mapped[float] = so.mapped_column(sa.Float, default=0.0)
     
     customer_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Customer.id), index=True)
-    order_information_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(OrderInformation.id))
+    order_information_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('order_information.id'))
 
 
 class Supplier(db.Model):
@@ -78,7 +84,7 @@ class Supplier(db.Model):
     name: so.Mapped[str] = so.mapped_column(sa.String(15))
     address: so.Mapped[str] = so.mapped_column(sa.String(15))
 
-    supply_orders: so.Mapped['SupplyOrder'] = so.relationship(backref='')
+    # supply_orders: so.Mapped['SupplyOrder'] = so.relationship(backref='')
 
 
 class SupplyOrder(db.Model):
@@ -88,5 +94,5 @@ class SupplyOrder(db.Model):
     price: so.Mapped[int] = so.mapped_column(sa.Float)
     created_at: so.Mapped[datetime.datetime] = so.mapped_column(default=lambda: datetime.datetime.now())
     
-    supplier_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Supplier.id))
-    ingredient_id = so.Mapped[int] = so.mapped_column(sa.ForeignKey(Ingredient.id))
+    supplier_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('supplier.id'))
+    ingredient_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('ingredient.id'))
