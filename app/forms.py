@@ -18,4 +18,7 @@ class CreateDishForm(FlaskForm):
     # ingredients = QuerySelectMultipleFieldWithCheckboxes("Ingredients")
     ingredients = SelectMultipleField('Ingredients', validators=[DataRequired()])
     
-    
+class CreateOrderForm(FlaskForm):
+    name = StringField('Order name (e.g. table number)', validators=[DataRequired()])
+    credit_card_number = StringField('Credit card number', validators=[DataRequired()])
+    dishes = SelectMultipleField('Dishes', validators=[DataRequired()])

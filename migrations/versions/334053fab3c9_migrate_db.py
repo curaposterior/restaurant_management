@@ -1,8 +1,8 @@
-"""all tables
+"""migrate db
 
-Revision ID: 00fd010bc5a1
+Revision ID: 334053fab3c9
 Revises: 
-Create Date: 2024-04-05 19:11:36.998210
+Create Date: 2024-04-11 21:17:11.622070
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '00fd010bc5a1'
+revision = '334053fab3c9'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -31,18 +31,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(length=20), nullable=False),
     sa.Column('price', sa.Float(), nullable=False),
-    sa.Column('dish_information_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['dish_information_id'], ['dish_information.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
-    )
-    op.create_table('dish_information',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('dish_id', sa.Integer(), nullable=False),
-    sa.Column('ingredient_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['dish_id'], ['dish.id'], ),
-    sa.ForeignKeyConstraint(['ingredient_id'], ['ingredient.id'], ),
-    sa.PrimaryKeyConstraint('id')
     )
     op.create_table('ingredient',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -68,6 +58,14 @@ def upgrade():
     with op.batch_alter_table('user', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_user_email'), ['email'], unique=True)
 
+    op.create_table('dish_information',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('dish_id', sa.Integer(), nullable=False),
+    sa.Column('ingredient_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['dish_id'], ['dish.id'], ),
+    sa.ForeignKeyConstraint(['ingredient_id'], ['ingredient.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('order_information',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('dish_id', sa.Integer(), nullable=False),
@@ -111,13 +109,13 @@ def downgrade():
     op.drop_table('order')
     op.drop_table('supply_order')
     op.drop_table('order_information')
+    op.drop_table('dish_information')
     with op.batch_alter_table('user', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_user_email'))
 
     op.drop_table('user')
     op.drop_table('supplier')
     op.drop_table('ingredient')
-    op.drop_table('dish_information')
     op.drop_table('dish')
     with op.batch_alter_table('customer', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_customer_card_number'))

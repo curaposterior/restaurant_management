@@ -56,14 +56,15 @@ class Dish(db.Model):
     name: so.Mapped[str] = so.mapped_column(sa.String(20), unique=True)
     price: so.Mapped[float] = so.mapped_column(sa.Float)
 
-    dish_information_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('dish_information.id'))
-    # dish_information: so.Mapped[DishInformation] = so.relationship()
+    # dish_information_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('dish_information.id'))
+    ingredients = db.relationship('DishInformation', backref='dish', foreign_keys='DishInformation.dish_id')
 
 
 class OrderInformation(db.Model):
     __tablename__ = "order_information"
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     dish_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('dish.id'))
+    # order_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('order.id'))
 
 
 class Order(db.Model):
