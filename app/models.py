@@ -48,6 +48,7 @@ class DishInformation(db.Model):
 
     dish_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('dish.id'))
     ingredient_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('ingredient.id'))
+    # quantity: so.Mapped[int] = so.mapped_column(sa.Integer, default=1)
 
 
 class Dish(db.Model):
@@ -64,7 +65,8 @@ class OrderInformation(db.Model):
     __tablename__ = "order_information"
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     dish_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('dish.id'))
-    # order_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('order.id'))
+    order_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('order.id'))
+    # quantity: so.Mapped[int] = so.mapped_column(sa.Integer)
 
 
 class Order(db.Model):
@@ -76,7 +78,6 @@ class Order(db.Model):
     price: so.Mapped[float] = so.mapped_column(sa.Float, default=0.0)
     
     customer_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey(Customer.id), index=True)
-    order_information_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('order_information.id'))
 
 
 class Supplier(db.Model):
@@ -84,8 +85,6 @@ class Supplier(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     name: so.Mapped[str] = so.mapped_column(sa.String(15))
     address: so.Mapped[str] = so.mapped_column(sa.String(15))
-
-    # supply_orders: so.Mapped['SupplyOrder'] = so.relationship(backref='')
 
 
 class SupplyOrder(db.Model):
@@ -96,4 +95,11 @@ class SupplyOrder(db.Model):
     created_at: so.Mapped[datetime.datetime] = so.mapped_column(default=lambda: datetime.datetime.now())
     
     supplier_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('supplier.id'))
+
+
+class SupplyInfo(db.Model):
+    __tablename__ = 'supply_info'
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
     ingredient_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('ingredient.id'))
+    supply_order_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('supply_order.id'))
+    quantity: so.Mapped[int] = so.mapped_column(sa.Integer, default=1)

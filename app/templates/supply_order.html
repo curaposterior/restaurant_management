@@ -1,5 +1,81 @@
 {% extends "base.html" %}
 {% block content %}
 <!--- Form for creating supply order -->
+<section class="position-relative py-4 py-xl-5">
+    <div class="container position-relative">
+        <div class="row d-flex justify-content-center">
+            <div class="col-md-8 col-lg-6 col-xl-5 col-xxl-4">
+                <div class="card mb-5">
+                    <div class="card-body p-sm-5">
+                        <h2 class="text-center mb-4">Add new order</h2>
+                        <form method="post">
+                            {{ form.csrf_token }}
+                            {{ form.hidden_tag() }}
+                            {{form.supplier_name.label}}  {{ form.supplier_name(class_='form-control') }}
+                            <hr>
+                            <div id="ingredient-fields">
+                                <b>Add multiple ingredients to supply order</b>
+                                <div class="btn-group" role="group" aria-label="Add/Remove">
+                                    <button type="button" class="btn btn-success">Add</button>
+                                    <!-- <button type="button" class="btn btn-danger">Remove</button> -->
+                                </div>
+                                {% for ingredient_form in form.ingredients %}
+                                    <div class="ingredient-field">
+                                        {{ ingredient_form.ingredient.label }} {{ ingredient_form.ingredient(class_='form-control') }}
+                                        {{ ingredient_form.quantity.label }} {{ ingredient_form.quantity(class_='form-control') }}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <hr><hr>
+                            <div>
+                                <button class="btn btn-primary d-block w-100" type="submit">Send </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var addButton = document.querySelector('.btn-success');
+        var ingredientFields = document.getElementById('ingredient-fields');
 
+        addButton.addEventListener('click', function() {
+            var newField = document.createElement('div');
+            newField.className = 'ingredient-field';
+            newField.innerHTML = `
+                <hr>
+                <label for="ingredients-{{ form.ingredients|length }}-ingredient">Ingredient</label>
+                <input name="ingredients-{{ form.ingredients|length }}-ingredient" class="form-control"></input>
+                <label for="ingredients-{{ form.ingredients|length }}-quantity">Quantity</label>
+                <input type="number" name="ingredients-{{ form.ingredients|length }}-quantity" class="form-control">
+                <div class="btn-group" role="group" aria-label="Add/Remove">
+                    <button type="button" class="btn btn-danger remove-ingredient">Remove</button>
+                </div>
+            `;
+            ingredientFields.appendChild(newField);
+            updateRemoveButtons();
+        });
+
+        ingredientFields.addEventListener('click', function(e) {
+            if (e.target && e.target.classList.contains('remove-ingredient')) {
+                e.target.parentNode.parentNode.remove();
+                updateRemoveButtons();
+            }
+        });
+
+        // function updateRemoveButtons() {
+        //     var removeButtons = document.querySelectorAll('.remove-ingredient');
+        //     removeButtons.forEach(function(button) {
+        //         button.disabled = removeButtons.length <= 2;
+        //     });
+        // }
+
+        // updateRemoveButtons();
+    });
+</script>
 {% endblock %}
