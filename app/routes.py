@@ -175,6 +175,27 @@ def report_one():
 @app.route('/report2', methods=['GET', 'POST'])
 def report_two():
     form = ReportTwoForm()
+    orders = Order.query.all()
+    order_names = [order.name for order in orders]
+    form.order_name.choices = order_names
+
+    if form.validate_on_submit():
+        try:
+            db_order = db.session.query(Order).filter_by(name=form.order_name.data).first()
+        except Exception:
+            flash("Could not find the order")
+            return render_template('report2.html', form=form)
+
+        dishes = []
+        dish_infos = db.session.query(OrderInformation).filter_by(order_id=db_order.id).all()
+        for dish_info in dish_infos:
+            d = Dish.query.get(dish_info.dish_id)
+            dishes.append(d)
+        
+        customer = db.session.query(Customer).filter_by(id=db_order.customer_id).first()
+
+        flash("Check your order's details")
+        return render_template('report2.html', order=db_order, customer=customer, dishes=dishes, form=form)
 
     return render_template('report2.html', form=form)
 

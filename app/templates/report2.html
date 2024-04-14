@@ -1,55 +1,46 @@
 {% extends 'base.html' %}
 {% block content %}
-{#
-    Report should look like this:
-    Bill No B-1276                          Bill Date 13/3/24
-    Customer Name: Piotr Sobol
-    Contact No xxxxxxxxx
-    Dish Name: Price:
-    Dish Name: Price:
-    Dish Name: Price:
-    Total Price: (in PLN)
-
-    Add dynamic data to the report. The user should be able to select an order and view the details of the order in the report.
-    #}
 <section>
-    <div class="container">
-        <h2>Report 2</h2>
+    <div class="container py-5">
+        <h2 class="mb-4">Report 2</h2>
         <form method="POST">
             {{ form.hidden_tag() }}
             <div class="mb-3">
-                {{ form.order_id.label }}
-                {{ form.order_id(class_='form-control') }}
+                {{ form.order_name.label(class_='form-label') }}
+                {{ form.order_name(class_='form-control') }}
             </div>
             <button class="btn btn-primary" type="submit">Generate report</button>
         </form>
         <hr>
         {% if order %}
-        <h3>Bill No {{ order.id }}</h3>
-        <p>Bill Date {{ order.date }}</p>
-        <p>Customer Name: {{ order.customer_name }}</p>
-        <p>Contact No {{ order.contact_no }}</p>
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Dish Name</th>
-                    <th scope="col">Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in order.items %}
-                <tr>
-                    <td>{{ item.dish_name }}</td>
-                    <td>{{ item.price }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        <p>Total Price: {{ order.total_price }}</p>
+        <div class="card mt-4">
+            <div class="card-header">
+                <h3 class="card-title">Bill No {{ order.id }}</h3>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Bill Date: <b>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</b></p>
+                <p class="card-text">Customer card number: <b>{{ customer.card_number }}</b></p>
+                <p class="card-text">Number of visits: <b>{{ customer.visits_number }}</b></p>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Dish Name</th>
+                            <th scope="col">Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in dishes %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.price }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p class="card-text">Total Price: {{ order.price }} PLN</p>
+            </div>
+        </div>
         {% endif %}
     </div>
 </section>
-
-
-
 {% endblock %}
