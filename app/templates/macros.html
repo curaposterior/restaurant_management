@@ -1,0 +1,24 @@
+    {%- macro render_ingredient_form(subform, index) %}
+    <div id="ingredient-{{ index }}-form" class="{% if index != '_' %}subform{% else %}is-hidden{% endif %}" data-index="{{ index }}">
+        <div class="row">
+            <div class="col-md-6">
+                <div>
+                    {{ subform.ingredient.label(for="ingredient-"+ index|string +"-ingredient") }}
+                    {{ subform.ingredient(class_='form-control', id="ingredient-"+ index|string +"-ingredient") }}
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div>
+                    {{ subform.quantity.label(for="ingredient-"+ index|string +"-quantity") }}
+                    {{ subform.quantity(class_='form-control', id="ingredient-"+ index|string +"-quantity") }}
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <a class="remove" href="#">Remove</a>
+            </div>
+        </div>
+        <hr/>
+    </div>
+    {%- endmacro %}

@@ -24,7 +24,7 @@ class Customer(db.Model):
     __tablename__ = 'customer'
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     visits_number: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
-    card_number: so.Mapped[str] = so.mapped_column(sa.String(19), index=True)
+    card_number: so.Mapped[str] = so.mapped_column(sa.String(20), index=True)
 
     # orders: so.WriteOnlyMapped['Order'] = so.relationship(back_populates='customer')
 
@@ -32,7 +32,7 @@ class Customer(db.Model):
 class Ingredient(db.Model):
     __tablename__ = 'ingredient'
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    name: so.Mapped[str] = so.mapped_column(sa.String(20), unique=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(20))
     quantity: so.Mapped[int] = so.mapped_column(sa.Integer)
     price: so.Mapped[float] = so.mapped_column(sa.Float)
 
@@ -48,7 +48,7 @@ class DishInformation(db.Model):
 
     dish_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('dish.id'))
     ingredient_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey('ingredient.id'))
-    # quantity: so.Mapped[int] = so.mapped_column(sa.Integer, default=1)
+    quantity: so.Mapped[int] = so.mapped_column(sa.Integer, default=1)
 
 
 class Dish(db.Model):
@@ -90,7 +90,7 @@ class Supplier(db.Model):
 class SupplyOrder(db.Model):
     __tablename__ = 'supply_order'
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
-    quantity: so.Mapped[int] = so.mapped_column(sa.Integer)
+    # quantity: so.Mapped[int] = so.mapped_column(sa.Integer)
     price: so.Mapped[int] = so.mapped_column(sa.Float)
     created_at: so.Mapped[datetime.datetime] = so.mapped_column(default=lambda: datetime.datetime.now())
     

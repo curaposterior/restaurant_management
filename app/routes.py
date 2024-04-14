@@ -1,5 +1,6 @@
 from app import app, db
-from flask import render_template, flash, redirect, url_for, request, abort
+from flask import render_template, flash, redirect, \
+                url_for, request, abort, jsonify
 
 import sqlalchemy as sa
 import app.models as models
@@ -7,7 +8,8 @@ from app.models import Ingredient, Dish, Order, DishInformation, \
                     OrderInformation, Customer
                        
 
-from app.forms import CreateDishForm, CreateOrderForm, CreateSupplyOrderForm, IngredientForm
+from app.forms import CreateDishForm, CreateOrderForm, CreateSupplyOrderForm, IngredientForm, \
+                    IngredientForm2, ReportTwoForm
 
 @app.route('/')
 @app.route('/index', methods=['GET'])
@@ -31,29 +33,38 @@ def form_dishes():
     ingredients = db.session.query(Ingredient).all()
 
     form = CreateDishForm()
-    choices = [item.name for item in ingredients]
-    form.ingredients.choices = [item.name for item in ingredients]
+    template_form = IngredientForm2(prefix='ingredient-_-')
+
+    choices = [item.name for item in ingredients if item.quantity > 0]
+    template_form.ingredient.choices = [item.name for item in ingredients if item.quantity > 0]
+    for entry in form.ingredients.entries:
+        entry.ingredient.choices = [item.name for item in ingredients if item.quantity > 0]
+
     if form.validate_on_submit():
+        print(form.data)
         # create dishs
         dish = Dish(name=form.name.data, price=form.price.data)
         db.session.add(dish)
         db.session.commit()
         
-        for ingr in form.ingredients.data:
-            if ingr in choices:
-                ingr_id = [ing for ing in ingredients if ing.name == ingr][0].id
-                dish_info = DishInformation(dish_id=dish.id, ingredient_id=ingr_id)
+        for entry in form.ingredients.data:
+            ingr_name = entry['ingredient']
+            quantity_int = entry['quantity']
+            if ingr_name in choices:
+                ingr_id = [ing for ing in ingredients if ing.name == ingr_name][0].id
+                dish_info = DishInformation(dish_id=dish.id, ingredient_id=ingr_id, quantity=quantity_int)
                 db.session.add(dish_info)
 
         db.session.commit()
         flash(f"Created dish - {dish.name} with ingredients {form.ingredients.data}")
+        flash(f"{form.data}")
         return redirect(url_for('form_dishes'))
     else:
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
 
-    return render_template('form_dish.html', title="Create dish", form=form)
+    return render_template('form_dish.html', title="Create dish", form=form, _template=template_form)
 
 
 @app.route('/create_orders', methods=['GET', 'POST'])
@@ -61,12 +72,12 @@ def form_orders():
     dishes = db.session.query(Dish).all()
     
     form = CreateOrderForm()
+    
     form.dishes.choices = [dish.name for dish in dishes]
     
     if form.validate_on_submit():
         price = 0.0
-
-        try_customer = db.session.query(models.Customer.card_number == form.card_number.data).first()
+        try_customer = db.session.query(models.Customer).filter_by(card_number=form.card_number.data).first()
         if try_customer:
             try_customer.visits_number += 1
         else:
@@ -88,11 +99,13 @@ def form_orders():
             for dish_info in db_dish.ingredients:
                 db_ingredient = db.session.query(Ingredient).where(Ingredient.id == dish_info.ingredient_id).first()
 
-                if db_ingredient.quantity == 0:
+                substract_val = db_ingredient.quantity - dish_info.quantity
+                if substract_val <= 0:
                     flash(f'Could not create order for dish {dish}. Too few {db_ingredient.name}. Order more.')
                     return redirect(url_for('form_orders'))
                 
-                db_ingredient.quantity -= 1
+                db_ingredient.quantity -= dish_info.quantity
+
                 if db_ingredient.quantity < 3: # the average threshold
                     flash(f'You are running out of {db_ingredient.name}, there is only {db_ingredient.quantity} left.')
         
@@ -113,28 +126,46 @@ def form_orders():
 @app.route('/supply_orders', methods=['GET', 'POST'])
 def form_supply_order():
     form = CreateSupplyOrderForm()
+    template_form = IngredientForm(prefix='ingredient-_-')
+
     ingredients = models.Ingredient.query.all()
     suppliers = models.Supplier.query.all()
     
-    # form.ingredients.append_entry(IngredientForm(ingredients=[i.name for i in ingredients],
-    #                                              quantity=1))
-    form.supplier_name.choices = [i.name for i in models.Supplier.query.all()]
+    form.supplier_name.choices = [i.name for i in suppliers]
 
     if form.validate_on_submit():
-        # logic of the supply order form
-        for entry in form.ingredients.data:
-            ingredient_id = entry['ingredient']
-            quantity = entry['quantity']
-            print(ingredient_id, quantity)
+        db_supplier = db.session.query(models.Supplier).filter_by(name=form.supplier_name.data).first()
+        if db_supplier is None:
+            abort(404)
+        
+        supply_order = models.SupplyOrder(supplier_id=db_supplier.id, price=0.0)
+        db.session.add(supply_order)
+        db.session.commit()
 
-        flash('Created supply order form')
+        for entry in form.ingredients.data:
+            print(entry)
+            ingredient_name = entry['ingredient']
+            quantity_int = entry['quantity']
+
+            db_ingredient =  db.session.query(Ingredient).filter_by(name=ingredient_name).first()
+            if db_ingredient is None:
+                db_ingredient = Ingredient(name=ingredient_name, quantity=0, price=0.0)
+                db.session.add(db_ingredient)
+                db.session.commit()
+            supply_info = models.SupplyInfo(ingredient_id=db_ingredient.id, 
+                                            supply_order_id=supply_order.id, 
+                                            quantity=quantity_int)
+            db.session.add(supply_info)
+
+        db.session.commit()
+        flash(f'Created supply order form {form.data}')
 
     else:
         for field, errors in form.errors.items():
             for error in errors:
                 flash(f"Error in {getattr(form, field).label.text}: {error}", "error")
 
-    return render_template('supply_order.html', form=form, ingredients=ingredients)
+    return render_template('supply_order.html', form=form, ingredients=ingredients, _template=template_form)
 
 @app.route('/report1', methods=['GET', 'POST'])
 def report_one():
@@ -143,8 +174,9 @@ def report_one():
 
 @app.route('/report2', methods=['GET', 'POST'])
 def report_two():
+    form = ReportTwoForm()
 
-    return render_template('report2.html')
+    return render_template('report2.html', form=form)
 
 
 @app.route('/test_data')

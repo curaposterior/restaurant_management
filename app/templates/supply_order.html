@@ -1,36 +1,51 @@
 {% extends "base.html" %}
+{% import "macros.html" as macros %}
+{% block styles %}
+<style>
+    .is-hidden {
+        display: none;
+    }
+</style>
+{% endblock %}
 {% block content %}
 <!--- Form for creating supply order -->
 <section class="position-relative py-4 py-xl-5">
     <div class="container position-relative">
         <div class="row d-flex justify-content-center">
-            <div class="col-md-8 col-lg-6 col-xl-5 col-xxl-4">
-                <div class="card mb-5">
-                    <div class="card-body p-sm-5">
-                        <h2 class="text-center mb-4">Add new order</h2>
-                        <form method="post">
-                            {{ form.csrf_token }}
+            <div class="col-lg-10">
+                <div class="card mb-6">
+                    <div class="card-body p-lg-5">
+                        <h2 class="text-center mb-4">Add new supply order</h2>
+                        <p  >See ingredients in the system and decide what to order</p>
+                        <div class="mb-3">
+                            <select class="form-select" id="ingredient-select">
+                                <option value="1">Ingredients</option>
+                                {% for item in ingredients %}
+                                    <option value="{{ item.id }}" disabled>{{ item.name }} - {{ item.quantity }} left</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <form id="ingredient-form" method="POST" role="form">
                             {{ form.hidden_tag() }}
-                            {{form.supplier_name.label}}  {{ form.supplier_name(class_='form-control') }}
-                            <hr>
-                            <div id="ingredient-fields">
-                                <b>Add multiple ingredients to supply order</b>
-                                <div class="btn-group" role="group" aria-label="Add/Remove">
-                                    <button type="button" class="btn btn-success">Add</button>
-                                    <!-- <button type="button" class="btn btn-danger">Remove</button> -->
-                                </div>
-                                {% for ingredient_form in form.ingredients %}
-                                    <div class="ingredient-field">
-                                        {{ ingredient_form.ingredient.label }} {{ ingredient_form.ingredient(class_='form-control') }}
-                                        {{ ingredient_form.quantity.label }} {{ ingredient_form.quantity(class_='form-control') }}
-                                    </div>
+                            {{ form.supplier_name.label }}  
+                            {{ form.supplier_name(class_='form-control') }}
+                            <br>
+                            <a id="add" href="#">Add Ingredients</a><hr>
+                            <br>
+                            <div id="subforms-container">
+                                {% for subform in form.ingredients %}
+                                    {{ macros.render_ingredient_form(subform, loop.index0) }}
                                 {% endfor %}
                             </div>
-                            <hr><hr>
                             <div>
                                 <button class="btn btn-primary d-block w-100" type="submit">Send </button>
                             </div>
                         </form>
+                        {% if form.errors %}
+                            {{ form.errors }}
+                        {% endif %}
+
+                        {{ macros.render_ingredient_form(_template, '_') }}
                     </div>
                 </div>
             </div>
@@ -39,43 +54,139 @@
 </section>
 {% endblock %}
 {% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var addButton = document.querySelector('.btn-success');
-        var ingredientFields = document.getElementById('ingredient-fields');
+<script defer>
+    const ID_RE = /(-)_(-)/;
 
-        addButton.addEventListener('click', function() {
-            var newField = document.createElement('div');
-            newField.className = 'ingredient-field';
-            newField.innerHTML = `
-                <hr>
-                <label for="ingredients-{{ form.ingredients|length }}-ingredient">Ingredient</label>
-                <input name="ingredients-{{ form.ingredients|length }}-ingredient" class="form-control"></input>
-                <label for="ingredients-{{ form.ingredients|length }}-quantity">Quantity</label>
-                <input type="number" name="ingredients-{{ form.ingredients|length }}-quantity" class="form-control">
-                <div class="btn-group" role="group" aria-label="Add/Remove">
-                    <button type="button" class="btn btn-danger remove-ingredient">Remove</button>
-                </div>
-            `;
-            ingredientFields.appendChild(newField);
-            updateRemoveButtons();
-        });
+    /**
+     * Replace the template index of an element (-_-) with the
+     * given index.
+     */
+    function replaceTemplateIndex(value, index) {
+        return value.replace(ID_RE, '$1'+index+'$2');
+    }
 
-        ingredientFields.addEventListener('click', function(e) {
-            if (e.target && e.target.classList.contains('remove-ingredient')) {
-                e.target.parentNode.parentNode.remove();
-                updateRemoveButtons();
+    /**
+     * Adjust the indices of form fields when removing items.
+     */
+    function adjustIndices(removedIndex) {
+        var $forms = $('.subform');
+
+        $forms.each(function(i) {
+            var $form = $(this);
+            var index = parseInt($form.data('index'));
+            var newIndex = index - 1;
+
+            if (index < removedIndex) {
+                // Skip
+                return true;
             }
+
+            // This will replace the original index with the new one
+            // only if it is found in the format -num-, preventing
+            // accidental replacing of fields that may have numbers
+            // intheir names.
+            var regex = new RegExp('(-)'+index+'(-)');
+            var repVal = '$1'+newIndex+'$2';
+
+            // Change ID in form itself
+            $form.attr('id', $form.attr('id').replace(index, newIndex));
+            $form.attr('data-index', newIndex); // $form.data('index', newIndex);
+            $form.data('index', newIndex);
+            console.log(newIndex);
+            // Change IDs in form fields
+            $form.find('label, input, select').each(function(j) {
+                var $item = $(this);
+
+                if ($item.is('label')) {
+                    // Update labels
+                    $item.attr('for', $item.attr('for').replace(regex, repVal));
+                    return;
+                }
+
+                // Update other fields
+                $item.attr('id', $item.attr('id').replace(regex, repVal));
+                $item.attr('name', $item.attr('name').replace(regex, repVal));
+            });
+        });
+    }
+
+    /**
+     * Remove a form.
+     */
+    function removeForm() {
+        var $removedForm = $(this).closest('.subform');
+        var removedIndex = parseInt($removedForm.data('index'));
+
+        $removedForm.remove();
+
+        // Update indices
+        adjustIndices(removedIndex);
+    }
+
+    /**
+     * Add a new form.
+     */
+    function addForm() {
+        var $templateForm = $('#ingredient-_-form');
+
+        if ($templateForm.length === 0) {
+            console.log('[ERROR] Cannot find template');
+            return;
+        }
+
+        // Get Last index
+        var $lastForm = $('.subform').last();
+
+        var newIndex = 0;
+
+        if ($lastForm.length > 0) {
+            newIndex = parseInt($lastForm.data('index')) + 1;
+        }
+        
+        // Maximum of 20 subforms
+        if (newIndex >= 20) {
+            console.log('[WARNING] Reached maximum number of elements');
+            return;
+        }
+
+        // Add elements
+        var $newForm = $templateForm.clone();
+
+        $newForm.attr('id', replaceTemplateIndex($newForm.attr('id'), newIndex));
+        $newForm.attr('data-index', newIndex);
+        // $newForm.data('index', newIndex);
+        console.log($newForm);
+        $newForm.find('label, input, select').each(function(idx) {
+            var $item = $(this);
+
+            if ($item.is('label')) {
+                // Update labels
+                $item.attr('for', replaceTemplateIndex($item.attr('for'), newIndex));
+                return;
+            }
+
+            // Update other fields
+            $item.attr('id', replaceTemplateIndex($item.attr('id'), newIndex));
+            var nameParts = $item.attr('name').split('-');
+            if (nameParts.length === 3) {
+                nameParts[0] = 'ingredients';  // Change the parent field name to 'ingredients'
+                $item.attr('name', nameParts.join('-'));
+            }
+            $item.attr('name', replaceTemplateIndex($item.attr('name'), newIndex));
         });
 
-        // function updateRemoveButtons() {
-        //     var removeButtons = document.querySelectorAll('.remove-ingredient');
-        //     removeButtons.forEach(function(button) {
-        //         button.disabled = removeButtons.length <= 2;
-        //     });
-        // }
+        // Append
+        $('#subforms-container').append($newForm);
+        $newForm.addClass('subform');
+        $newForm.removeClass('is-hidden');
 
-        // updateRemoveButtons();
+        $newForm.find('.remove').click(removeForm);
+    }
+
+
+    $(document).ready(function() {
+        $('#add').click(addForm);
+        $('.remove').click(removeForm);
     });
 </script>
 {% endblock %}

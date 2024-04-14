@@ -14,7 +14,7 @@
                 <p>Ingredients</p>
                 <ul class="list-group">
                     {% for ingredient in ingredients %}
-                    <li class="list-group-item"><span>{{ ingredient.name }}</span></li>
+                    <li class="list-group-item"><span>{{ ingredient.name }} - {{ ingredient.quantity }} left</span></li>
                     {% endfor %}
                 </ul>
             </div>
