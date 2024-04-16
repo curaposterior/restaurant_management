@@ -25,8 +25,7 @@ class Customer(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     visits_number: so.Mapped[int] = so.mapped_column(sa.Integer, default=0)
     card_number: so.Mapped[str] = so.mapped_column(sa.String(20), index=True)
-
-    # orders: so.WriteOnlyMapped['Order'] = so.relationship(back_populates='customer')
+    orders: so.WriteOnlyMapped['Order'] = so.relationship('Order', backref='customer')
 
 
 class Ingredient(db.Model):

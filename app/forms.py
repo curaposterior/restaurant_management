@@ -2,7 +2,7 @@ from flask_wtf import FlaskForm
 import wtforms as wtf
 from wtforms import StringField, PasswordField, BooleanField, \
             SubmitField, IntegerField, FloatField, SelectMultipleField, \
-            SelectField, FormField, FieldList, Form
+            SelectField, FormField, FieldList, Form, DateField
 
 import wtforms.validators as validators
 from wtforms.validators import DataRequired
@@ -43,7 +43,9 @@ class CreateSupplyOrderForm(FlaskForm):
 
 
 class ReportOneForm(FlaskForm):
-    pass
+    start_date = DateField('Start Date', validators=[DataRequired()])
+    end_date = DateField('End Date', validators=[DataRequired()])
+    submit = SubmitField('Generate Report')
 
 
 class ReportTwoForm(FlaskForm):

@@ -3,13 +3,14 @@ from flask import render_template, flash, redirect, \
                 url_for, request, abort, jsonify
 
 import sqlalchemy as sa
+from sqlalchemy.orm import joinedload
 import app.models as models
 from app.models import Ingredient, Dish, Order, DishInformation, \
                     OrderInformation, Customer
                        
 
 from app.forms import CreateDishForm, CreateOrderForm, CreateSupplyOrderForm, IngredientForm, \
-                    IngredientForm2, ReportTwoForm
+                    IngredientForm2, ReportTwoForm, ReportOneForm
 
 @app.route('/')
 @app.route('/index', methods=['GET'])
@@ -169,8 +170,23 @@ def form_supply_order():
 
 @app.route('/report1', methods=['GET', 'POST'])
 def report_one():
+    form = ReportOneForm()
 
-    return render_template('report1.html')
+    page = request.args.get('page', default=1, type=int)
+
+    if form.validate_on_submit():
+        # report 2 logic
+        start_date = form.start_date.data
+        end_date = form.end_date.data
+        # orders = Order.query.filter(Order.created_at.between(start_date, end_date)).order_by(Order.created_at)
+        orders = Order.query.options(joinedload(Order.customer)). \
+                filter(Order.created_at.between(start_date, end_date)) \
+                .order_by(Order.created_at)
+        pagination = orders.paginate(page=page, per_page=20)
+        return render_template('report1.html', pagination=pagination, 
+                               start_date=start_date, end_date=end_date, form=form)
+
+    return render_template('report1.html', form=form, pagination=False)
 
 @app.route('/report2', methods=['GET', 'POST'])
 def report_two():
