@@ -1,18 +1,13 @@
 from flask_wtf import FlaskForm
 import wtforms as wtf
-from wtforms import StringField, PasswordField, BooleanField, \
+from wtforms import StringField, \
             SubmitField, IntegerField, FloatField, SelectMultipleField, \
             SelectField, FormField, FieldList, Form, DateField
 
 import wtforms.validators as validators
 from wtforms.validators import DataRequired
 
-from wtforms_alchemy import QuerySelectMultipleField
-from wtforms import widgets
-
-class QuerySelectMultipleFieldWithCheckboxes(QuerySelectMultipleField):
-    widget = widgets.ListWidget(prefix_label=False)
-    option_widget = widgets.CheckboxInput()
+import calendar
 
 
 class IngredientForm(Form):
@@ -28,7 +23,6 @@ class IngredientForm2(Form):
 class CreateDishForm(FlaskForm):
     name = StringField('Dish name', validators=[DataRequired()])
     price = FloatField('Price of the dish', validators=[DataRequired()])
-    # ingredients = SelectMultipleField('Ingredients', validators=[DataRequired()])
     ingredients = FieldList(FormField(IngredientForm2), min_entries=1, max_entries=20)
     
 class CreateOrderForm(FlaskForm):
@@ -50,3 +44,10 @@ class ReportOneForm(FlaskForm):
 
 class ReportTwoForm(FlaskForm):
     order_name = SelectField('Select order by name', validators=[DataRequired()])
+
+
+class ReportThreeForm(FlaskForm):
+    month = SelectField('Month', 
+                        choices=[(i, calendar.month_name[i]) for i in range(1,13)], 
+                        validators=[DataRequired()])
+    year = IntegerField('Year', validators=[DataRequired()])

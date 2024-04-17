@@ -1,16 +1,15 @@
 from app import app, db
 from flask import render_template, flash, redirect, \
                 url_for, request, abort, jsonify
-
 import sqlalchemy as sa
 from sqlalchemy.orm import joinedload
 import app.models as models
 from app.models import Ingredient, Dish, Order, DishInformation, \
-                    OrderInformation, Customer
-                       
-
+                    OrderInformation, Customer, SupplyInfo, SupplyOrder
 from app.forms import CreateDishForm, CreateOrderForm, CreateSupplyOrderForm, IngredientForm, \
-                    IngredientForm2, ReportTwoForm, ReportOneForm
+                    IngredientForm2, ReportTwoForm, ReportOneForm, ReportThreeForm
+
+from datetime import datetime
 
 @app.route('/')
 @app.route('/index', methods=['GET'])
@@ -21,12 +20,6 @@ def index():
     
     return render_template('index.html', title="RS", dishes=dishes, 
                            ingredients=ingredients, orders=orders)
-
-
-@app.route('/create_ingredients')
-def form_ingredients():
-
-    return render_template('forms.html')
 
 
 @app.route('/create_dishes', methods=['GET', 'POST'])
@@ -42,8 +35,6 @@ def form_dishes():
         entry.ingredient.choices = [item.name for item in ingredients if item.quantity > 0]
 
     if form.validate_on_submit():
-        print(form.data)
-        # create dishs
         dish = Dish(name=form.name.data, price=form.price.data)
         db.session.add(dish)
         db.session.commit()
@@ -57,8 +48,7 @@ def form_dishes():
                 db.session.add(dish_info)
 
         db.session.commit()
-        flash(f"Created dish - {dish.name} with ingredients {form.ingredients.data}")
-        flash(f"{form.data}")
+        flash(f"Created dish - {dish.name} with ingredients {[obj['ingredient'] for obj in form.ingredients.data]} for {dish.price} PLN")
         return redirect(url_for('form_dishes'))
     else:
         for field, errors in form.errors.items():
@@ -114,7 +104,6 @@ def form_orders():
             db.session.add(new_order_info)
     
         order.price = price
-        # db.session.add(order)
         db.session.commit()
         flash(f'Created order {order}. The price of the order is {price} PLN')
     else:
@@ -142,9 +131,9 @@ def form_supply_order():
         supply_order = models.SupplyOrder(supplier_id=db_supplier.id, price=0.0)
         db.session.add(supply_order)
         db.session.commit()
-
+        
+        price = 0.0
         for entry in form.ingredients.data:
-            print(entry)
             ingredient_name = entry['ingredient']
             quantity_int = entry['quantity']
 
@@ -153,13 +142,15 @@ def form_supply_order():
                 db_ingredient = Ingredient(name=ingredient_name, quantity=0, price=0.0)
                 db.session.add(db_ingredient)
                 db.session.commit()
+            price += db_ingredient.price
             supply_info = models.SupplyInfo(ingredient_id=db_ingredient.id, 
                                             supply_order_id=supply_order.id, 
                                             quantity=quantity_int)
             db.session.add(supply_info)
-
+        supply_order.price = price
+        db.session.add(supply_order)
         db.session.commit()
-        flash(f'Created supply order form {form.data}')
+        flash(f"Created supply order form for {[(obj['ingredient'], obj['quantity']) for obj in form.ingredients.data]}")
 
     else:
         for field, errors in form.errors.items():
@@ -175,16 +166,27 @@ def report_one():
     page = request.args.get('page', default=1, type=int)
 
     if form.validate_on_submit():
-        # report 2 logic
         start_date = form.start_date.data
         end_date = form.end_date.data
-        # orders = Order.query.filter(Order.created_at.between(start_date, end_date)).order_by(Order.created_at)
         orders = Order.query.options(joinedload(Order.customer)). \
                 filter(Order.created_at.between(start_date, end_date)) \
                 .order_by(Order.created_at)
-        pagination = orders.paginate(page=page, per_page=20)
+        daily_totals = db.session.query(sa.func.date(Order.created_at), sa.func.sum(Order.price)).\
+            filter(Order.created_at.between(start_date, end_date)).\
+            group_by(sa.func.date(Order.created_at)).all()
+
+        pagination = orders.paginate(page=page, per_page=300)
+        
+        if not pagination.items:
+            flash("Empty report. Try different data.")
+            return render_template('report1.html', pagination=pagination, 
+                               start_date=start_date, end_date=end_date, 
+                               form=form, daily_totals=daily_totals)
+
+        flash("Check your reports's details")
         return render_template('report1.html', pagination=pagination, 
-                               start_date=start_date, end_date=end_date, form=form)
+                               start_date=start_date, end_date=end_date, 
+                               form=form, daily_totals=daily_totals)
 
     return render_template('report1.html', form=form, pagination=False)
 
@@ -210,13 +212,40 @@ def report_two():
         
         customer = db.session.query(Customer).filter_by(id=db_order.customer_id).first()
 
-        flash("Check your order's details")
+        flash("Check your reports's details")
         return render_template('report2.html', order=db_order, customer=customer, dishes=dishes, form=form)
 
     return render_template('report2.html', form=form)
 
 
-@app.route('/test_data')
+@app.route('/report3', methods=['GET', 'POST'])
+def report_three():
+    form = ReportThreeForm()
+    
+    if form.validate_on_submit():
+        month = form.month.data
+        year = form.year.data
+
+        if not (1990 <= year <= datetime.now().year):
+            abort(403)
+
+        results = db.session.query(Ingredient.name, sa.func.sum(SupplyInfo.quantity), sa.func.sum(SupplyOrder.price)).\
+            join(SupplyInfo, Ingredient.id == SupplyInfo.ingredient_id).\
+            join(SupplyOrder, SupplyInfo.supply_order_id == SupplyOrder.id).\
+            filter(sa.func.extract('month', SupplyOrder.created_at) == month).\
+            filter(sa.func.extract('year', SupplyOrder.created_at) == year).\
+            group_by(Ingredient.name).all()
+        
+        if len(results) == 0:
+            flash("Empty report. Select different month")
+        else:
+            flash("Check your reports's details")
+        return render_template('report3.html', data_ready=True, month=month, year=year, results=results, form=form)
+
+    return render_template('report3.html', data_ready=False, form=form)
+
+
+@app.route('/test_data') # TO BE REMOVED
 def create_data():
     test_list = [
         Ingredient(name='bread', quantity=30, price=3.9),

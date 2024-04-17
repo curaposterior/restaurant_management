@@ -8,11 +8,3 @@ class Config:
         'sqlite:///' + os.path.join(basedir, 'app.db')
     
     MIN_THRESHOLD_INGRIEDIENTS = 100
-
-'''
-3 formularze na input
-
-2 na output - wyjmowanie danych, np wyciaganie
-
-srs, er diagram,
-'''

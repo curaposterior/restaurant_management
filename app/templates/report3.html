@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block content %}
+    <div class="container">
+        <h2 class="my-4">Report 3</h2>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <p>Enter Month and Year</p>
+            <div class="form-group">
+                {{ form.month.label }}
+                {{ form.month(class="form-control width-limit") }}
+            </div>
+            <div class="form-group">
+                {{ form.year.label }}
+                {{ form.year(class="form-control width-limit") }}
+            </div><br>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+        <hr>
+        {% if data_ready %}
+        <h3>Monthly Summarized Report of Ingredient Orders</h3>
+        <p>Month: {{ month }} {{ year }}</p>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Ingredient name</th>
+                    <th>Quantity (in Gm)</th>
+                    <th>Price (of one ingredient)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, quantity, price in results %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td>{{ quantity }}</td>
+                    <td>{{ price }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+{% endblock %}

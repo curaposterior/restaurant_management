@@ -14,11 +14,11 @@
                     <label>{{ form.end_date.label }}</label>
                     {{ form.end_date(class="form-control") }}
                 </div>
-        </div>
+        </div><br>
         <div class="form-group">
             {{ form.submit(class="btn btn-primary") }}
         </div>
-        
+        <hr>
     </form>
     {% if pagination.items %}
     <h2 class="my-4">Summarized Sales Data ({{ start_date }} to {{ end_date }})</h2>
@@ -44,7 +44,7 @@
             {% endfor %}
         </tbody>
     </table>
-    <nav>
+    <!-- <nav>
         <ul class="pagination">
             {% if pagination.has_prev %}
             <li class="page-item"><a class="page-link" href="{{ url_for('report_one', page=pagination.prev_num) }}">Previous</a></li>
@@ -60,7 +60,26 @@
             <li class="page-item disabled"><a class="page-link">Next</a></li>
             {% endif %}
         </ul>
-    </nav>
+    </nav> -->
+    {% endif %}
+    {% if daily_totals %}
+    <h3>Total price for each day</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Total Sales (in PLN)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for date, total in daily_totals %}
+            <tr>
+                <td>{{ date }}</td>
+                <td>{{ total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     {% endif %}
 </div>
 {% endblock %}
