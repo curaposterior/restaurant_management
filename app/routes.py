@@ -18,7 +18,7 @@ def index():
     ingredients = db.session.query(Ingredient).all()
     orders = db.session.query(Order).all()
     
-    return render_template('index.html', title="RS", dishes=dishes, 
+    return render_template('index.html', title="Restaurant System", dishes=dishes, 
                            ingredients=ingredients, orders=orders)
 
 
